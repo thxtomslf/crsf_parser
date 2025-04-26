@@ -22,6 +22,7 @@
 #define MAX_CONFIG_LINE_LENGTH 256
 #define MAX_SERVICE_NAME_LENGTH 128
 #define MAX_LOG_MESSAGE_LENGTH 512
+#define DEFAULT_THRESHOLD_CHECK_FREQ 1.0 // 1 секунда по умолчанию
 
 // Уровни логирования
 typedef enum {
@@ -39,6 +40,7 @@ typedef struct {
     int port;
     bool logging_enabled;
     log_level_t log_level;
+    double threshold_check_freq; // Частота проверки порога в секундах
 } crsf_config_t;
 
 // Функция для проверки CRC8

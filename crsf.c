@@ -60,6 +60,7 @@ int read_config(crsf_config_t *config, const char *config_path) {
     // Устанавливаем значения по умолчанию
     config->logging_enabled = true;
     config->log_level = LOG_LEVEL_INFO;
+    config->threshold_check_freq = DEFAULT_THRESHOLD_CHECK_FREQ;
 
     char line[MAX_CONFIG_LINE_LENGTH];
     while (fgets(line, sizeof(line), file)) {
@@ -88,6 +89,13 @@ int read_config(crsf_config_t *config, const char *config_path) {
             else if (strcasecmp(value, "WARNING") == 0) config->log_level = LOG_LEVEL_WARNING;
             else if (strcasecmp(value, "INFO") == 0) config->log_level = LOG_LEVEL_INFO;
             else if (strcasecmp(value, "DEBUG") == 0) config->log_level = LOG_LEVEL_DEBUG;
+        } else if (strcmp(key, "THRESHOLD_CHECK_FREQ") == 0) {
+            config->threshold_check_freq = atof(value);
+            if (config->threshold_check_freq <= 0) {
+                config->threshold_check_freq = DEFAULT_THRESHOLD_CHECK_FREQ;
+                crsf_log(config, LOG_LEVEL_WARNING, "Invalid threshold check frequency, using default: %.1f seconds", 
+                        DEFAULT_THRESHOLD_CHECK_FREQ);
+            }
         }
     }
 
@@ -222,9 +230,9 @@ int crsf_process_packet(const uint8_t *packet, size_t len, const crsf_config_t *
     uint16_t channels[16];
     unpackCrsfChannels(packet + 3, channels);
 
-    // Проверка порога для указанного канала (не чаще чем раз в секунду)
+    // Проверка порога для указанного канала
     time_t now = time(NULL);
-    if (now - last_threshold_check >= 1) {
+    if (difftime(now, last_threshold_check) >= config->threshold_check_freq) {
         last_threshold_check = now;
 
         uint16_t channel_value = channels[config->channel_number - 1];
